@@ -9,6 +9,10 @@ output*
 # Figures generated
 figures_*
 
+# Tests generated
+tests*
+
+
 # C extensions
 *.so
 

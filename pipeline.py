@@ -1,5 +1,6 @@
 import os
 import json
+import warnings
 import numpy as np
 import seaborn as sns
 from utils import Utils
@@ -9,79 +10,12 @@ import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 from hsiroutine import HsiRoutine
 import matplotlib.patches as mpatches
+from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 from IPython.display import clear_output
 from sklearn.metrics import confusion_matrix
-
-
-colors = {
-    '0': '#2001c4',
-    '1': '#707e51',
-    '2': '#df0100',
-    '3': '#a96a77',
-    '4': '#288bb0',
-    '5': '#643a89',
-    '6': '#715657',
-    '7': '#533e55',
-    '8': '#68be9e',
-    '9': '#bafeac',
-    '10': '#bf4f37',
-    '11': '#0fd1c6',
-    '12': '#22cbe3',
-    '13': '#961e53',
-    '14': '#1ad397',
-    '15': '#811771',
-    '16': '#404686',
-    '17': '#4c42e2',
-    '18': '#fbf899',
-    '19': '#bdd387',
-    '20': '#7774bd',
-    '21': '#1b0f3f',
-    '22': '#32e726',
-    '23': '#b25e1c',
-    '24': '#87508b',
-    '25': '#fa38ff',
-    '26': '#c0e33c',
-    '27': '#6b8a93',
-    '28': '#cec15f',
-    '29': '#7cbca0',
-    '30': '#692225',
-    '31': '#4e7aee',
-    '32': '#89f41d',
-    '33': '#2a5ba7',
-    '34': '#5cb70b',
-    '35': '#c8f9a1',
-    '36': '#cbc184',
-    '37': '#253b85',
-    '38': '#919b65',
-    '39': '#76929b',
-    '40': '#7e6943',
-    '41': '#7b1170',
-    '42': '#2785ca',
-    '43': '#a16180',
-    '44': '#45abc2',
-    '45': '#eec78b',
-    '46': '#f8310a',
-    '47': '#1b8991',
-    '48': '#a5c7a5',
-    '49': '#d67f3a',
-    '50': '#6dca0d',
-    '51': '#139386',
-    '52': '#3cf0ff',
-    '53': '#4f8013',
-    '54': '#4c1134',
-    '55': '#c28f0d',
-    '56': '#2ddfdb',
-    '57': '#eaadda',
-    '58': '#dcd64b',
-    '59': '#c0a95c',
-    '60': '#b375f6',
-    '61': '#73b7df',
-    '62': '#2a5b84',
-    '63': '#d34e2d',
-}
 
 
 class HsiPipeline:
@@ -90,6 +24,12 @@ class HsiPipeline:
         self.folder = data_folder
         self.samples = samples
         self.routine = HsiRoutine()
+        self.utils = Utils()
+
+        self.properties = {'fontproperties': {'family': 'sans-serif',
+                                              'weight': 'bold',
+                                              'size': 10},
+                           }
 
     def _remove_bg_sample(self, sample: Sample,
                           dark_prefix='DARKREF_',
@@ -114,6 +54,279 @@ class HsiPipeline:
             out_i = self.routine.getCluster(image, bacteria.sample_cluster, 0, (1, 1, 1))
             plt.imshow(self.routine.rgbscale(out_i))
             plt.show()
+
+    def __concatenate_groups(self, spectral_range=(1, 241), case=0, true_labels=None, mean=False):
+
+        targets = {}
+        targets_0 = {}
+        concatenated = {}
+        for idx, sample in enumerate(list(self.samples)):
+
+            bacteria = Utils.load_bacteria(path=self.folder, name=sample)
+            matrix = self._signal_filter(sample=bacteria)
+
+            ind, _ = self.routine.sum_idx_array(self.routine.realIdx(bacteria.sample_cluster, 1))
+            matrix = matrix[ind, spectral_range[0]:spectral_range[1]]
+
+            targets_0[self.samples[sample][0]] = self.samples[sample][case]
+
+            if case == 0:
+                targets[self.samples[sample][0]] = '_'.join(sample.split('_')[:2])
+            else:
+                if not true_labels:
+                    print('true_labels must be specified')
+
+                for keys in list(true_labels.keys()):
+                    if true_labels[keys] == self.samples[sample][case]:
+                        targets[self.samples[sample][case]] = keys
+
+                        break
+
+            if self.samples[sample][case] not in list(concatenated.keys()):
+                concatenated[self.samples[sample][case]] = \
+                    np.array([]).reshape(0, matrix.shape[1])
+
+            if not mean:
+                concatenated[self.samples[sample][case]] = \
+                    np.concatenate((concatenated[self.samples[sample][case]], matrix), )
+            else:
+                concatenated[self.samples[sample][case]] = \
+                    np.concatenate((concatenated[self.samples[sample][case]],
+                                    self.routine.mean_from_2d(matrix, axis=0).reshape(1, -1)))
+
+        return concatenated, (targets, targets_0)
+
+    def get_group_mean_matrix(self, spectral_range=(1, 241), case=0, true_labels=None):
+        """
+        :param spectral_range: spectral range in which the samples are selected
+        :param case: case of working, according to samples dictionary
+        :param true_labels: the true labels of the groups
+        :return: returns the mean matrix of the groups, the samples in the group are concatenated
+        before the mean were calculated.
+        """
+
+        concatenated, targets = self.__concatenate_groups(spectral_range=spectral_range,
+                                                          case=case, true_labels=true_labels)
+
+        mean_group = {}
+        for key in list(concatenated.keys()):
+            mean_group[key] = self.routine.mean_from_2d(matrix=concatenated[key], axis=0).reshape(1, -1)
+
+        return mean_group, targets
+
+    def get_pca_matrix(self, spectral_range=(1, 241), case=0, true_labels=None, mean=False, pcs=3):
+        """
+
+        :param pcs:
+        :param spectral_range:
+        :param case:
+        :param true_labels:
+        :param mean: if True means that what will be concatenated is the
+        mean of each sample in the group, if False the hole matrix will be concatenated
+        :return: returns the scores of the data, the data are concatenated as group
+        """
+
+        targets = []
+        mean_matrix = []
+        if not mean:
+            concatenated, targets_groups = self.__concatenate_groups(spectral_range=spectral_range,
+                                                                     case=case, true_labels=true_labels)
+        else:
+            concatenated, targets_groups = self.__concatenate_groups(spectral_range=spectral_range,
+                                                                     case=case, true_labels=true_labels, mean=True)
+
+            for key, target in zip(list(concatenated.keys()), list(targets_groups[0].keys())):
+                mean_matrix.append(concatenated[key])
+                targets.append(target)
+
+        var_exp = {}
+        pca_matrix = {}
+        pca = PCA(n_components=pcs)
+
+        if not mean:
+            all_samples = np.array([]).reshape((0, concatenated[list(concatenated.keys())[0]].shape[1]))
+            for key in list(concatenated.keys()):
+                all_samples = np.concatenate((all_samples, concatenated[key]))
+
+            tmp_pcamatrix = pca.fit_transform(all_samples)
+            var_exp['unique'] = pca.explained_variance_ratio_
+
+            a = -1
+            for key in list(concatenated.keys()):
+                pca_matrix[key] = tmp_pcamatrix[a + 1:a + concatenated[key].shape[0], :]
+                a = a + a + concatenated[key].shape[0]
+
+        else:
+            tmp_ = np.array(mean_matrix)
+            tmp_ = tmp_.reshape(tmp_.shape[0] * tmp_.shape[1], -1)
+
+            pcs = pca.fit_transform(tmp_)
+            var_exp['unique'] = pca.explained_variance_ratio_
+
+            for idx, key in enumerate(list(targets_groups[1].keys())):
+                pca_matrix[key] = pcs[idx, :]
+
+        return pca_matrix, var_exp, targets_groups
+
+    def plot_pca_samples(self, pca_matrix_groups: dict, exp_var_groups: dict,
+                         true_labels: tuple, out_dir: str, pc_plot=None):
+
+        plots = []
+        if pc_plot is None:
+            pc_plot = [[0, 1], [1, 2], [0, 2]]
+
+        for xy in pc_plot:
+            fig, ax = plt.subplots(**{'figsize': (12, 6), 'dpi': 100})
+            plt.rcParams.update({'font.size': 10})
+
+            for idx, group in enumerate(list(true_labels[1].keys())):
+                plotargs = {'color': self.utils.colors[str(true_labels[1][group])],
+                            'label': str(true_labels[1][group]) + '_{}'.format(
+                                true_labels[0][true_labels[1][group]]),
+                            'linewidth': 2}
+
+                var_exp_keys = list(exp_var_groups.keys())
+                ax.set_xlabel('PC{} ({:.2f}%)'.format(xy[0] + 1,
+                                                      exp_var_groups[var_exp_keys[0]][xy[0]] * 100))
+                ax.set_ylabel('PC{} ({:.2f}%)'.format(xy[1] + 1,
+                                                      exp_var_groups[var_exp_keys[0]][xy[1]] * 100))
+
+                ax.set_xlabel(ax.get_xlabel(), self.properties['fontproperties'])
+                ax.set_ylabel(ax.get_ylabel(), self.properties['fontproperties'])
+
+                if len(pca_matrix_groups[group].shape) == 1:
+                    pca_matrix_groups[group] = pca_matrix_groups[group].reshape(1, -1)
+
+                ax.text(pca_matrix_groups[group][:, xy[0]] + 0.04,
+                        pca_matrix_groups[group][:, xy[1]], str(idx),
+                        color="black", fontsize=6)
+
+                plots.append(ax.plot(pca_matrix_groups[group][:, xy[0]],
+                                     pca_matrix_groups[group][:, xy[1]],
+                                     '.', **plotargs))
+
+            labels = [plot[0].get_label() for plot in plots]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                legend = fig.legend(
+                    plots,
+                    labels,
+                    loc='upper right',
+                    bbox_to_anchor=(0.98, 2, 0.32, -0.102),
+                    mode='expand',
+                    ncol=2,
+                    bbox_transform=fig.transFigure,
+                )
+
+            legend.set_visible(False)
+            if out_dir:
+                figure_name = os.path.join(out_dir, 'PC_{}xPC_{}.jpeg'.format(xy[0] + 1, xy[1] + 1))
+                os.makedirs(out_dir, exist_ok=True)
+                fig.savefig(figure_name,
+                            bbox_extra_artists=[],
+                            bbox_inches='tight')
+
+            fig.canvas.draw()
+            legend_bbox = legend.get_tightbbox(fig.canvas.get_renderer())
+            legend_bbox = legend_bbox.transformed(fig.dpi_scale_trans.inverted())
+            legend_fig, legend_ax = plt.subplots(figsize=(legend_bbox.width + 3, legend_bbox.height))
+            legend_squared = legend_ax.legend(
+                *ax.get_legend_handles_labels(),
+                bbox_to_anchor=(0, 0, 1, 1),
+                bbox_transform=legend_fig.transFigure,
+                frameon=False,
+                fontsize=12,
+                fancybox=None,
+                shadow=False,
+                ncol=1,
+                mode='expand',
+            )
+
+            legend_ax.axis('off')
+
+            if out_dir:
+                # Save the legend as a separate figure
+                legend_figpath = 'legend_PC_{}xPC_{}.jpeg'.format(xy[0] + 1, xy[1] + 1)
+                legend_fig.savefig(
+                    os.path.join(out_dir, 'LEGEND_' + legend_figpath),
+                    bbox_inches='tight',
+                    bbox_extra_artists=[legend_squared],
+                )
+
+    def plot_spectres(self, mean_group: dict, true_labels: dict,
+                      out_dir: str, file_name='mean_spectres.jpeg', spectral_range=(1, 241)):
+
+        plots = []
+        fig, axes = plt.subplots(figsize=(12, 6), dpi=1000)
+        plt.rcParams.update({'font.size': 10})
+
+        wavelengths = self.routine.get_wavelength(folder=self.folder,
+                                                  sample=list(self.samples.keys())[0],
+                                                  spectral_range=spectral_range)
+
+        axes.set_ylabel("Pseudo Absorbância")
+        axes.set_xlabel("Comprimento de onda")
+        axes.set_xlabel(axes.get_xlabel(), self.properties['fontproperties'])
+        axes.set_ylabel(axes.get_ylabel(), self.properties['fontproperties'])
+
+        # for i, target in zip(range(mean_matrix.shape[0]), targets):
+        for idx, group in enumerate(list(true_labels[0].keys())):
+            for sample in range(mean_group[group].shape[0]):
+                plotargs = {'color': self.utils.colors[str(group)],
+                            'label': true_labels[0][group], 'linewidth': 2}
+
+                ind = np.linspace(0, wavelengths.shape[1] - 1, num=5, dtype=np.int)
+
+                axes.set_xticks(ind)
+                axes.set_xticklabels(wavelengths[0, ind])
+
+                plots.append(axes.plot(np.arange(mean_group[group].shape[1]),
+                                       mean_group[group][sample, :], **plotargs))
+
+        labels = [plot[0].get_label() for plot in plots]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            legend = fig.legend(
+                plots,
+                labels,
+                loc='upper right',
+                bbox_to_anchor=(0.98, 2, 0.32, -0.102),
+                mode='expand',
+                ncol=2,
+                bbox_transform=fig.transFigure,
+            )
+
+        legend.set_visible(False)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+            fig.savefig(os.path.join(out_dir, file_name),
+                        bbox_extra_artists=[],
+                        bbox_inches='tight')
+
+        fig.canvas.draw()
+        legend_bbox = legend.get_tightbbox(fig.canvas.get_renderer())
+        legend_bbox = legend_bbox.transformed(fig.dpi_scale_trans.inverted())
+        legend_fig, legend_ax = plt.subplots(figsize=(legend_bbox.width + 3, legend_bbox.height))
+        legend_squared = legend_ax.legend(
+            *axes.get_legend_handles_labels(),
+            bbox_to_anchor=(0, 0, 1, 1),
+            bbox_transform=legend_fig.transFigure,
+            frameon=False,
+            fontsize=12,
+            fancybox=None,
+            shadow=False,
+            ncol=1,
+            mode='expand',
+        )
+
+        legend_ax.axis('off')
+
+        # Save the legend as a separate figure
+        legend_fig.savefig(
+            os.path.join(out_dir, 'LEGEND_' + file_name),
+            bbox_inches='tight',
+            bbox_extra_artists=[legend_squared],
+        )
 
     def process_images(self):
 
@@ -190,11 +403,14 @@ class HsiPipeline:
 
                 for classe in model.classes_:
                     #             print(hex2rgb(colors[str(int(classe))]), colors[str(int(classe))])
-                    image = self.routine.getCluster(image, full_array, classe, Utils.hex2rgb(colors[str(int(classe))]))
-                    cl_legends.append(colors[str(int(classe))])
+                    image = self.routine.getCluster(image,
+                                                    full_array,
+                                                    classe,
+                                                    Utils.hex2rgb(self.utils.colors[str(int(classe))]))
+                    cl_legends.append(self.utils.colors[str(int(classe))])
                     targets.append(Utils.get_name(cfg['samples_training'], classe, 0))
 
-                cl_legends = [colors[str(int(classe))] for classe in model.classes_]
+                cl_legends = [self.utils.colors[str(int(classe))] for classe in model.classes_]
                 patches = [mpatches.Patch(color=cl_legends[i], label=targets[i])
                            for i in range(len(targets))]
 
@@ -214,15 +430,14 @@ class HsiPipeline:
 
                 del ind, bacteria, matrix
 
-    def get_Xy(self, case: int, spectral_range=(1, 241), test_size=0.5):
+    def get_Xy(self, case: int, spectral_range=(1, 241), test_size=0.5, true_labels=None):
         y_test = np.array([])
         y_train = np.array([])
 
-        X_test = np.array([]).reshape(0, 240)
-        X_train = np.array([]).reshape(0, 240)
+        X_test = np.array([]).reshape(0, spectral_range[1] - spectral_range[0])
+        X_train = np.array([]).reshape(0, spectral_range[1] - spectral_range[0])
 
         target_names = []
-
         for idx, sample in enumerate(list(self.samples.keys())):
             if self.samples[sample][case] == -1:
                 continue
@@ -233,8 +448,13 @@ class HsiPipeline:
             matrix = matrix[:, spectral_range[0]:spectral_range[1]]
 
             if case != 0:
-                target_names.append(Utils.get_name(self.samples,
-                                                   self.samples[sample][case], case))
+                if true_labels:
+                    for key in list(true_labels.keys()):
+                        if true_labels[key] == self.samples[sample][case]:
+                            target_names.append((sample, key))
+                else:
+                    target_names.append(Utils.get_name(self.samples,
+                                                       self.samples[sample][case], case))
             else:
                 target_names.append(sample)
 
@@ -280,19 +500,28 @@ class HsiPipeline:
             json.dump(config, f_cfg)
             f_cfg.close()
 
+        new_target = []
+        for key in target_names:
+            if type(key) is tuple:
+                if key[1] not in new_target:
+                    new_target.append(key[1])
+
         for model in models:
             print(model.__class__.__name__)
 
             classifier = model.fit(x_train, y_train)
             predictions = classifier.predict(x_test)
 
-            print(classification_report(y_test, predictions, target_names=list(target_names)))
+            print(classification_report(y_test,
+                                        predictions,
+                                        target_names=list(new_target if len(new_target) > 0 else target_names)))
 
             _, ax = plt.subplots(figsize=(13, 10))
             sns.set(font_scale=1.5)
             cf_matrix = confusion_matrix(y_test, predictions)
             sns.heatmap(cf_matrix / np.sum(cf_matrix), annot=True,
-                        xticklabels=target_names, yticklabels=target_names,
+                        xticklabels=new_target if len(new_target) > 0 else target_names,
+                        yticklabels=new_target if len(new_target) > 0 else target_names,
                         fmt='.2%', cmap='Blues', ax=ax, annot_kws={"size": 16})
 
         dump(models, os.path.join(os.getcwd(), work_dir, models_file))

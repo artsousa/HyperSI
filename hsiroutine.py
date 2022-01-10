@@ -6,6 +6,8 @@ from sklearn.decomposition import PCA
 from scipy.signal import savgol_filter
 from sklearn.preprocessing import MinMaxScaler
 
+import os
+import spectral as sp
 from sample import Sample
 
 
@@ -22,6 +24,14 @@ class HsiRoutine:
                                  self.mean_from_2d(matrix=matrix), **kwargs)[0])
 
         return plot
+
+    @staticmethod
+    def get_wavelength(folder: str, sample: str, spectral_range=(1, 241)):
+        wv = sp.open_image(os.path.join(folder,
+                                        sample,
+                                        'capture', sample + '.hdr')).metadata['Wavelength']
+
+        return np.array(wv)[spectral_range[0]:spectral_range[1]].reshape(1, -1)
 
     def raw2mat(self, image: Sample, white: Sample, dark: Sample,
                 inplace=True):
