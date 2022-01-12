@@ -377,7 +377,9 @@ class HsiPipeline:
     def results(self, models: list,
                 work_dir: str,
                 fig_dest_dir=None,
-                spectral_range=(1, 241), ):
+                case=0,
+                spectral_range=(1, 241),
+                true_labels=None):
 
         with open(os.path.join(os.getcwd(), work_dir, 'config.json'), 'r') as f_cfg:
             cfg = json.load(f_cfg)
@@ -408,7 +410,11 @@ class HsiPipeline:
                                                     classe,
                                                     Utils.hex2rgb(self.utils.colors[str(int(classe))]))
                     cl_legends.append(self.utils.colors[str(int(classe))])
-                    targets.append(Utils.get_name(cfg['samples_training'], classe, 0))
+
+                    if not true_labels:
+                        targets.append(Utils.get_name(cfg['samples_training'], classe, 0))
+                    else:
+                        targets.append(true_labels[classe])
 
                 cl_legends = [self.utils.colors[str(int(classe))] for classe in model.classes_]
                 patches = [mpatches.Patch(color=cl_legends[i], label=targets[i])
@@ -525,3 +531,5 @@ class HsiPipeline:
                         fmt='.2%', cmap='Blues', ax=ax, annot_kws={"size": 16})
 
         dump(models, os.path.join(os.getcwd(), work_dir, models_file))
+
+    # TODO: classification report file
