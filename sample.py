@@ -5,6 +5,16 @@ import spectral as sp
 sp.settings.envi_support_nonlowercase_params = True
 
 
+
+
+""" 
+    Class Sample responsável por preparar os arquivos obtidos em Utils e gerar os hipercubos necessários. 
+    Os arquivos gerados pela câmera (DARK, WHITE e .hdr) seguem a estrutura de arquivos dentro a "capture" e são 
+    passados para o formato numpy.
+ 
+ """
+
+
 class Sample:
     def __init__(self, path, sample_name, inter='capture',
                  sample_prefix=None,
@@ -23,8 +33,8 @@ class Sample:
 
     def _read_image(self, to_numpy_format):
         """
-            image stores a class from Spectral package
-            sample stores a numpy array with 3 dimensions (wavelength x rows x cols)
+            imagem armazena uma classe do pacote Spectral
+            sample armazena um array numpy com 3 dimensões (comprimento de onda x linhas x colunas)
         """
         try:
             self.image = sp.open_image(os.path.join(self.path, self.sample_name + '.hdr'))
@@ -38,7 +48,7 @@ class Sample:
 
     def save(self):
         """
-            save class at self.name.txt
+            salvar a imagem normalizada
         """
         sample_path = os.path.join(self.path, self.sample_name)
         sample_file = sample_path + '.pkl'
@@ -88,8 +98,8 @@ class Sample:
 
 
 if __name__ == '__main__':
-    sample = Sample('dir',
-                    'Enterobacteaerogenes_13048_Plastico_A_Contaminado_180926-102646')
+    sample = Sample('/Users/Usuario/HSIPipelineTeste/HyperSI/Plastico B',
+                    'Bacillusscereus_14579_Plastico_B_180926-092335')
 
     print(sample.image.shape)
     print('done')

@@ -72,27 +72,67 @@ class Utils:
             '63': '#d34e2d',
         }
 
+    
+    
     @property
     def colors(self):
+        """
+            Função colors com objetivo de retornar as cores previamente declaradas
+        """
         return self.__colors
 
+   
     @colors.setter
     def colors(self, var):
+        """
+            Função colors com objetivo de setar as cores previamente declaradas
+        """
         self.__colors = var
 
+    # Função load_sample com objetivo de retornar o diretório onde se encontram as amostras obticas pela câmera hisperespectral 
     @staticmethod
     def load_samples(folder):
+        """ 
+            Parâmetros: 
+                - Folder: Caminho diretório em que se encontra os arquivos
+            Retorno:
+                - O nome de todos dos diretórios contidos. 
+        """
         return [a for a in os.listdir(folder)
                 if os.path.isdir(os.path.join(folder, a))]
 
+
     @staticmethod
     def get_name(samples_dict, group, case, sz=2):
+        """
+           Função "get_name" com objetivo de retornar o nome de cada amostra, tratado de maneira a obter o nome da amostra 
+           sem "_" e com os primeiros digitos para identificação.
+           
+            Parâmetros: 
+                - samples_dict: Dicionário com rótulos das amostras de bactérias
+                - group: Especificação da amostra sendo entre especie ou coloração
+                - case: Caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+            Retorno:
+                - Label com o nome da amostra tratado. Ex. Enterobacteaerogenes13048
+        """
         labels = [key for key in samples_dict.keys() if samples_dict[key][case] == group]
 
         return ''.join(labels[0].split('_')[:sz])
 
+    
     @staticmethod
     def load_bacteria(path: str, name: str, folder='capture'):
+        """
+            Função "load_bacteria" com objetivo de obter o caminho das amostras e retornar o carregamento do arquivo.
+            
+            Parâmetros: 
+                - path: Diretório 
+                - name: Nome da amostra (conforme o nome que consta no diretório)
+                - folder: Todos arquivos encontram-se dentro do diretório capture 
+                (Ex. Plastico B\Klebsielapneumonial_700603_Plastico_B_180926-105913\capture)
+            Retorno: 
+                - Saída do diretório
+        """
         sample_path = os.path.join(path, name)
         with open(os.path.join(sample_path, folder, name + '.pkl'), 'rb') as file:
             out = pickle.load(file)
@@ -109,6 +149,12 @@ class Utils:
 
     @staticmethod
     def get_dict(samples: list):
+        """
+        Função "get_dict" tem como objetivo retornar o dicionário com o nome das amostras.
+        
+            Parâmetros: 
+                - Lista com as amostras contidas.
+        """
         samples_dict = {}
         for sample, idx in zip(samples, np.arange(len(samples))):
             samples_dict[sample] = [idx + 1]
