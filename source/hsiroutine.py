@@ -14,9 +14,16 @@ from source.sample import Sample
 class HsiRoutine:
 
     def plot_mean_spectre(self, samples: list, **kwargs):
-        """
-            Plot the mean spectre, calculated from the 2D matrix, default axis is the rows
-            samples: list of 2D matrix (x*y, z)
+      
+       """
+          Plote o espectro médio, calculado a partir da matriz 2D, o eixo padrão são as linhas
+          amostras: lista de matriz 2D (x*y, z)
+          
+          Parâmetros: 
+              - samples: Lista de amostras a serem plotadas. 
+              - Argumentos para plotagem do grafico (cor, espessura, etc. )
+          Retorno
+              - Imagem com o plot dos espectros médios
         """
         plot = []
         for matrix in samples:
@@ -27,6 +34,20 @@ class HsiRoutine:
 
     @staticmethod
     def get_wavelength(folder: str, sample: str, spectral_range=(1, 241)):
+        
+        """
+            Função com objetivo de obter o valor do comprimento de onda, através dos arquivos
+            gerados pela câmera hiperespectral, de cada amostra. 
+            
+            Parâmetros: 
+                - folder: Caminho onde se encontra os arquivos
+                - sample: Nome de cada amostra obtida
+                - spectral_image: Tamanho do range espectral de cada amostra.
+                
+            Retorno:
+                - Array com o tamanho do range espectral.
+        """
+        
         wv = sp.open_image(os.path.join(folder,
                                         sample,
                                         'capture', sample + '.hdr')).metadata['Wavelength']
@@ -35,10 +56,28 @@ class HsiRoutine:
 
     def raw2mat(self, image: Sample, white: Sample, dark: Sample,
                 inplace=True):
-        """
-            Normalize the sample using the Dark (0% Reflectance) and
-            White (100% Reflectance) references, using the equation:
+         """
+            Normaliza a amostra usando o Dark (0% Reflectance) e
+            Referências brancas (100% de refletância), usando a equação:
             -log10((S - D)/(W - D))
+            
+            Parâmetros: 
+                - image: A própria amostra sample, arquivo .hdr
+                - white: Referência do branco, arquivo WHITEREF
+                - dark: Referência do preto, arquivo DARKREF
+                - inplace: significa altera o comportamento padrão, de modo que a operação no 
+                dataframe não retorna nada, em vez disso, 'modifica os dados subjacentes'
+                
+            Funções: 
+                extract_lines: Retorna somente as linhas obtidas na matrix
+                    - Parâmetros: A própria matriz e a quantidade de linhas. 
+                    - Retorno: Quantidade de linhas na matriz
+                replace_median: Retorna matriz com a nova média substituída (verificando os locais na matriz em que são 
+                                zero e substituindo pela próxima posição. 
+                    - Parâmetros: A própria matriz
+                    - Retorno: A matriz com valores substituidos da média
+            Retorno: 
+                - Matriz normalizada
         """
 
         def extract_lines(matrix, lines):
@@ -76,33 +115,59 @@ class HsiRoutine:
 
     @staticmethod
     def hsi2matrix(matrix: np.ndarray):
-        """
-            Rearrange the 3D matrix that so that each pixel became a
-            row in the 2D returned matrix
+        """ 
+            Reorganizar a matriz 3D para que cada pixel se torne um
+            linha na matriz retornada 2D
+            
+            Parâmetros: 
+                - matriz: Hipercubo em formato numpy
+            Retorno: 
+                - Matriz convertida em bidimensional
         """
         return matrix.T.reshape((matrix.shape[1] * matrix.shape[2], matrix.shape[0]), order='F')
 
     @staticmethod
     def matrix2hsi(matrix: np.ndarray, rows: int, cols: int):
-        """
-            Rearrange the 2D matrix into a 3D matrix
-            final shape (-1, rows, cols)
+      
+        """           
+            Reorganizar a matriz 2D em uma matriz 3D
+            forma final (-1, linhas, colunas)
+            
+            Parâmetros: 
+                - matriz: Matriz em formato numpy
+                - rows: Número de linhas
+                - cols: Número de colunas
+            Retorno:
+                - Matriz 3D
         """
         return matrix.T.reshape(-1, rows, cols)
 
     @staticmethod
     def mean_from_2d(matrix: np.ndarray, axis=0):
         """
-            Return the mean spectre of the 2D matrix
-            matrix: hypercube (x*y, z)
+            Retorna o espectro médio da matriz 2D
+            matriz: hipercubo (x*y, z)
+            
+            Paramêtros: 
+                - matriz: Matriz em formato numpy
+                - axis: O eixo da matriz x ao longo do qual o filtro deve ser aplicado
+            Retorno: 
+                - Matriz com valor da média em 2 dimensões
         """
         return np.mean(matrix, axis=axis)
 
     @staticmethod
     def mean_from_3d(matrix: np.ndarray, ndims=2, axis=1):
         """
-            Return the mean spectre of the 3D sample
-            matrix: hypercube (x, y, z)
+            Retornar o espectro médio da amostra 3D
+            matriz: hipercubo (x, y, z)
+            
+            Parâmetros: 
+                - matriz: A matriz em formato numpy
+                - ndims: Número de dimensões
+                - axis: O eixo da matriz x ao longo do qual o filtro deve ser aplicado
+            Retorno
+                - A média da matriz 3D
         """
         mean = np.mean(matrix, axis=axis).astype(np.float64)
         if ndims == 3:
@@ -112,9 +177,15 @@ class HsiRoutine:
 
     @staticmethod
     def snv(matrix: np.ndarray):
+          """
+            Standard Normal Variate (SNV). 
+            
+            Parâmetros: 
+                - matrix: Matriz em formato numpy
+            Retorno: 
+                - Matriz normalizada conforme SNV
         """
-            Standard Normal Variate
-        """
+
 
         out = np.zeros_like(matrix)
         for i in range(matrix.shape[0]):
@@ -124,8 +195,13 @@ class HsiRoutine:
 
     @staticmethod
     def normalize_mean(matrix: np.ndarray):
-        """
-            Center data in 0 with the mean
+         """
+            Centralizar os dados em 0 com a média
+            
+            Parâmetros: 
+                - matrix: Matriz com formato numpy
+            Retorno: 
+                - Matriz normalizada
         """
 
         out = np.zeros_like(matrix)
@@ -136,6 +212,22 @@ class HsiRoutine:
 
     @staticmethod
     def savitzky_golay(y, window_size, order, deriv=0, rate=1):
+        
+        """
+            Savitzky-Golay para atenuação dos ruídos e conservação do sinal de interesse. 
+            
+            Parâmetros: 
+                - y: O dado filtrado (saida)
+                - window_size: O comprimento da janela do filtro (ou seja, o número de coeficientes). 
+                  Se o modo for ‘interp’, window_length deve ser menor ou igual ao tamanho de x.
+                - order: A ordem do polinômio usado para ajustar as amostras. Order deve ser menor que window_size.
+                - deriv: A ordem da derivada a ser calculada. Este deve ser um número inteiro não 
+                  negativo. O padrão é 0, o que significa filtrar os dados sem diferenciar.
+                - mode='constant': A extensão contém o valor fornecido pelo argumento cval (Valor a ser preenchido além 
+                  das bordas da entrada se o modo for ‘constante’. O padrão é 0,0.).
+            Retorno: 
+                - A matrix y filtrada 
+        """
         order_range = range(order + 1)
         half_window = (window_size - 1) // 2
 
@@ -158,14 +250,29 @@ class HsiRoutine:
 
     def removeBg(self, matrix, pcs):
         """
-            matrix 3d to remove the bg
-            pcs: number of pcs to kmeans
+            Matriz 3d para remover o bg
+            pcs: número de pcs para kmeans
+            
+            Parâmetros: 
+                - matrix: Matriz de entrada
+                - pcs: Número de componentes principais
+            Retorno: 
+                - Matriz filtrada com a remoção do background
         """
         scores = PCA(n_components=pcs).fit_transform(self.hsi2matrix(matrix))
         return KMeans(n_clusters=2, init='k-means++', n_init=5, max_iter=300).fit(scores).labels_
 
     @staticmethod
     def rgbscale(image):
+        
+         """
+            Converter imagem para escala em RGB    
+            
+            Parâmetros: 
+                - image: Imagem gerada na função acima (removeBg)
+            Retorno:
+                - Imagem convertida em RGB
+        """
         return (image * 255).astype(np.uint8)
 
     @staticmethod
@@ -190,8 +297,8 @@ class HsiRoutine:
     @staticmethod
     def rev_idx_array(idx, rmv, shape=None, tfill=None):
         """
-            Create an array of idx according with
-            idx and rmv, arrays of indexes
+           Criar um array de idx de acordo com
+           idx e rmv, matrizes de índices
         """
 
         if shape is None:
@@ -210,8 +317,8 @@ class HsiRoutine:
         return out.astype(int)
 
     def getCluster(self, image, idx, c, rgb):
-        """
-            show the idx in the image
+          """  
+            Apresentar o idx na imagem
         """
 
         ind = self.realIdx(idx, c)

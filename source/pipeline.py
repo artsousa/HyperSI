@@ -40,6 +40,16 @@ class HsiPipeline:
 
     def _signal_filter(self, sample: Sample,
                        order=2, window=21, dv=1, mode='constant'):
+        
+        """ 
+         A função "_signal_filter" aplica o métodos para filtrar, normalizar e suavizar as imagens.
+         
+            Parâmetros: 
+                - Sample: amostras das bactérias.
+              
+            Retorno: 
+                - Matrix filtrada. 
+        """
 
         matrix = self.routine.hsi2matrix(sample.normalized)
         matrix = self.routine.normalize_mean(matrix)
@@ -48,6 +58,18 @@ class HsiPipeline:
         return self.routine.snv(matrix=matrix)
 
     def visualize_images(self):
+        
+        """
+        A função "visualize_images" visa plotar as bactérias.
+        
+            - Realiza carregamento das bactérias, utlizando a função "load_bacterias" explicado em Utils. 
+            - Setando o tamanho em linhas a ser plotado de cada imagem 
+            - Converte-a para RGB para que possa ser visualizada
+            
+            
+            Retorno:
+              - Plot da imagem da bacteria em RGB 
+        """
 
         for idx, sample in enumerate(list(self.samples.keys())):
             bacteria = Utils.load_bacteria(path=self.folder, name=sample)
@@ -62,6 +84,21 @@ class HsiPipeline:
                              true_labels=None,
                              mean=False,
                              process=True):
+        
+         """
+            A função "__concatenate_groups" tem como objetivo concatenar as matrizes relacionadas 
+            a cada grupo de bactérias entre espécies e colorações
+            
+            Parâmetros:
+                - spectral_range: Faixa espectral na qual as amostras são selecionadas
+                - case: caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+                - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
+                - mean: quando True significa que será concatenada a média de cada amostra no grupo, quando False a 
+                  o buraco da matriz será concatenada
+            Retorno:
+                - A matriz concatenada
+                - Targets dos samples
+        """
 
         targets = {}
         targets_0 = {}
@@ -108,13 +145,17 @@ class HsiPipeline:
         return concatenated, (targets, targets_0)
 
     def get_group_mean_matrix(self, spectral_range=(1, 241), case=0, true_labels=None, process=True):
-        """
-        :param process:
-        :param spectral_range: spectral range in which the samples are selected
-        :param case: case of working, according to samples dictionary
-        :param true_labels: the true labels of the groups
-        :return: returns the mean matrix of the groups, the samples in the group are concatenated
-        before the mean were calculated.
+         """
+            A função "get_group_mean_matrix" objetiva obter a média da matriz para os seus respectivos grupos.
+         
+            Parâmetros:
+                - spectral_range: Faixa espectral na qual as amostras são selecionadas
+                - case: caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+                - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
+               
+            Retorno:
+                - Matriz média dos grupos
+                - Amostras no grupo concatenadas antes da média ser calculada
         """
 
         concatenated, targets = self.__concatenate_groups(spectral_range=spectral_range,
@@ -128,15 +169,20 @@ class HsiPipeline:
 
     def get_pca_matrix(self, spectral_range=(1, 241), case=0, true_labels=None, mean=False, pcs=3):
         """
-
-        :param pcs:
-        :param spectral_range:
-        :param case:
-        :param true_labels:
-        :param mean: if True means that what will be concatenated is the
-        mean of each sample in the group, if False the hole matrix will be concatenated
-        :return: returns the scores of the data, the data are concatenated as group
-        """
+            A função "get_pca_matrix" visa obter a matriz de análise de componentes principais (pca).
+            
+            Parâmetros:
+                - spectral_range: Faixa espectral na qual as amostras são selecionadas
+                - case: Caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+                - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
+                - mean: quando True significa que será concatenada a média de cada amostra no grupo, quando False a 
+                  o buraco da matriz será concatenada
+                - pcs: Quantidade de componentes principais presentes na PCA.
+            Retorno:
+                - Retorna os scores dos dados concatenados como grupo
+                - A variância explicada
+                - Os rótulos das bactérias
+          """
 
         targets = []
         mean_matrix = []
@@ -242,6 +288,18 @@ class HsiPipeline:
 
     def plot_pca_samples(self, pca_matrix_groups: dict, exp_var_groups: dict,
                          true_labels: tuple, out_dir: str, pc_plot=None):
+        
+         """
+            A função "plot_pca_samples" retorna o plot das PCs.
+            
+            Parâmetros: 
+                - pca_matrix_groups: Matriz PCA retornada pela função get_pca_matrix
+                - exp_var_groups: Grupo de variância explicada retornado pela função get_pca_matrix
+                - true_labels:Tupla com nome dos rótulos das bácterias
+                - out_dir: Nome diretório de saída da imagem plotada
+            Retorno: 
+                - O plot dos gráficos que representam a PCA e suas respectivas variâncias
+        """
 
         plots = []
         if pc_plot is None:
@@ -327,6 +385,19 @@ class HsiPipeline:
 
     def plot_spectres(self, mean_group: dict, true_labels: dict,
                       out_dir: str, file_name='mean_spectres.jpeg', spectral_range=(1, 241)):
+        
+         """ 
+            A função "plot_spectres" retorna a imagem plotada dos espectros das bactérias.
+            
+            Parâmetros:
+                - mean_group: Matriz retornada na função get_group_mean_matrix
+                - true_labels: Dicionário com os rótulos das bactérias
+                - out_dir: string com nome do diretório onde o plot da imagem será salvo
+                - file_name: Nome ao qual a imagem será salva
+                - spectral_range: Faixa espectral na qual as amostras são selecionadas
+           Retorno: 
+               - A função retorna o plot da imagem representando os espectros médios das bactérias. 
+        """
 
         plots = []
         fig, axes = plt.subplots(figsize=(12, 6), dpi=1000)
@@ -401,6 +472,14 @@ class HsiPipeline:
         )
 
     def process_images(self):
+        
+        """ 
+            A função "process_images" tem por objtivo tratar os dados obtidos pela camêra hisperespectral 
+            e, após, processá-las convertendo-as em matriz, aplicando seus respectivos filtros 
+        
+            Retorno: 
+                - A função retornará a imagem processada em RGB da bácteria analisada. 
+        """
 
         for idx, sample in enumerate(list(self.samples.keys())):
             print(sample, idx)
@@ -452,6 +531,22 @@ class HsiPipeline:
                 case=0,
                 spectral_range=(1, 241),
                 true_labels=None):
+        
+                
+        """
+            Função com objetivo de plotar as imagens pintadas da classificação 
+            pixel a pixel para cada amostra a nível de cores.
+            
+            Parâmetros: 
+                - models: Lista de modelos para treinamento
+                - work_dir: Diretório onde será salvo os resultados obtidos
+                - fig_dest_dir: Diretório de destino das figuras geradas
+                - spectral_range: Faixa espectral na qual as amostras são selecionadas
+                - true_labels: Dicionário com os rótulos das bactérias
+            Retorno: 
+                - Plot das imagens classificadas pixel a pixel para cada amostra. 
+            
+        """
 
         with open(os.path.join(os.getcwd(), work_dir, 'config.json'), 'r') as f_cfg:
             cfg = json.load(f_cfg)
@@ -509,6 +604,21 @@ class HsiPipeline:
                 del ind, bacteria, matrix
 
     def get_Xy(self, case: int, spectral_range=(1, 241), test_size=0.5, true_labels=None):
+        
+         """
+            Função "get_Xy" visa preparar os dados entre teste e treino para o treinamento e classificação.
+            
+            Parâmetros:      
+                - case: Caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+                - spectral_range: Faixa espectral na qual as amostras são selecionadas
+                - test_size:  Separação dos dados entre treino e teste em 50% cada
+                - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
+                
+            Retorno: 
+                - A matriz X_test
+                - A matrix Y_test
+                - Rótulos das bácterias
+        """
         y_test = np.array([])
         y_train = np.array([])
 
@@ -566,6 +676,30 @@ class HsiPipeline:
                      y_train: np.ndarray, y_test: np.ndarray,
                      models: list, target_names: list, models_file: str,
                      samples_dict: dict, work_dir='outputs'):
+        
+                
+        """
+        
+            A função "train_models" define algumas configurações e saídas a serem aplicadas aos modelos de treinamento (exemplificados 
+            no notebook "Classification_exemple")
+    
+            Parâmetros:
+                - X_train: Matriz retornada na funcao "get_Xy" para treinamento
+                - X_test:  Matriz retornada na funcao "get_Xy" para teste
+                - Y_train: Matriz retornada na funcao "get_Xy" para treinamento
+                - X_test: Matriz retornada na funcao "get_Xy" para teste
+                - models: Modelos para treinamento definidos na chamada da função com seus respectivos parâmetros
+                - target_names: Lista de nome dos rótulos das bactérias
+                - models_file: Arquivo carregado antes a chamada da função com definições sobre os modelos utilizados
+                - samples_dict: Dicionário com rótulos das bactérias
+                - work_dir: diretório de saída do treinamento
+            Retorno
+                - Relatório de classificação contendo as informações: precition, recall e f1-score
+                - Matriz de confusão para analise. 
+                
+            A função visa obter as samples, treinar os modelos e para validação apresentar a matriz de 
+            confusão correspondente ao treinamento. 
+        """
 
         os.makedirs(os.path.join(os.getcwd(), work_dir), exist_ok=True)
 
