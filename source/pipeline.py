@@ -38,11 +38,12 @@ class HsiPipeline:
                           white_prefix='WHITEREF_', ):
         pass
 
-    def _signal_filter(self, sample: Sample):
+    def _signal_filter(self, sample: Sample,
+                       order=2, window=21, dv=1, mode='constant'):
 
         matrix = self.routine.hsi2matrix(sample.normalized)
         matrix = self.routine.normalize_mean(matrix)
-        matrix = self.routine.sgolay(matrix=matrix, order=2, window=21, derivative=1, mode='constant')
+        matrix = self.routine.sgolay(matrix=matrix, order=order, window=window, derivative=dv, mode=mode)
 
         return self.routine.snv(matrix=matrix)
 
@@ -193,18 +194,29 @@ class HsiPipeline:
 
         return x
 
-    def generate_results(self, models_name: str, work_dir: str):
+    def __rev_dict(self, samples_dict, case=0):
+        rev = dict()
+        for key in list(samples_dict.keys()):
+            rev[samples_dict[key][case]] = key
+
+        return rev
+
+    def generate_results(self, models_name: str, work_dir: str, output_dir: str,
+                         true_labels_name=None):
 
         x = self.__get_samples()
         models = load(models_name)
 
-        results = pd.DataFrame(columns=[model.__class__.__name__ + '_' +
-                                        str(idx) for idx, model in enumerate(models)],
-                               index=[key for key in x.keys()])
+        results_models = pd.DataFrame(columns=[model.__class__.__name__ + '_' +
+                                               str(idx) for idx, model in enumerate(models)],
+                                      index=[key for key in x.keys()])
 
-        with open(os.path.join(os.getcwd(), work_dir, 'config.json'), 'r') as f_cfg:
-            cfg = json.load(f_cfg)
-            f_cfg.close()
+        if not true_labels_name:
+            with open(os.path.join(work_dir, 'config.json'), 'r') as f_cfg:
+                cfg = json.load(f_cfg)
+                f_cfg.close()
+
+        true_labels_name = self.__rev_dict(cfg['samples_training'])
 
         for idx, model in enumerate(models):
             print(model.__class__.__name__, idx)
@@ -217,9 +229,16 @@ class HsiPipeline:
                 results = Counter(y_hat)
 
                 for key_r in results.keys():
-                    target = get_name(samples_dict_model, key_r, 0)
+                    target = true_labels_name[int(key_r)]
                     results_dict[target] = results[key_r] / y_hat.shape[0]
 
+                results_dict = OrderedDict(sorted(results_dict.items(), key=lambda t: x[1], reverse=True))
+                rst_string = ' \n'.join(["{}: {:.4f}".format(key, results_dict[key])
+                                         for key in list(results_dict.keys())[:1]])
+
+                results_models.loc[key, model.__class__.__name__ + '_' + str(idx)] = rst_string
+
+        results_models.to_csv(output_dir)
 
     def plot_pca_samples(self, pca_matrix_groups: dict, exp_var_groups: dict,
                          true_labels: tuple, out_dir: str, pc_plot=None):
