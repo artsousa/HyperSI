@@ -12,6 +12,8 @@ figures_*
 # Tests generated
 tests*
 
+# In working notebooks
+in_working
 
 # C extensions
 *.so
