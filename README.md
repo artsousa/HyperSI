@@ -6,13 +6,11 @@ Hyperspectral Image toolbox
         A Imagem Hiperspectral (Hyperspectral Imaging, HSI) pode ser descrita como uma técnica que combina uma imagem 
         digital com a espectroscopia para se obter tanto as informações espaciais quanto espectrais de uma determinada amostra.
     </li>
-    
     <li>
          HSI representa um conjunto de dados tridimensionais chamado hipercubo, com duas dimensões espaciais e uma 
          dimensão espectral. A  dimensão espectral da HSI é formada a partir da sobreposição de k imagens digitais, 
          onde cada imagem corresponde distribuição espacial da intensidade de um sinal em um determinado comprimento de onda λ.
-    </li>
-    
+    </li>    
     <li>
         Quando combinadas as informações espaciais com as espectrais de uma amostra, se obtém uma estrutura tridimensional. 
         Que pode ser representada por I(x, y, λ). denominada como cubo hiperspectral. Cada pixel vai conter um espectro 
@@ -27,9 +25,11 @@ Hyperspectral Image toolbox
 </ul>
  
    
-![Alt text](/Users/Usuario/pipeline_apresentacao/HyperSI/images/hsi.png?raw=true "HSI")
+![alt text](https://github.com/artsousa/HyperSI/blob/documentacao_pipeline/images/hsi.PNG?raw=true)
    
-![Alt text](/Users/Usuario/pipeline_apresentacao/HyperSI/images/mat hsi.png?raw=true "HSI")
+
+![alt text](https://github.com/artsousa/HyperSI/blob/documentacao_pipeline/images/mat%20hsi.PNG?raw=true)
+
    
 
 <ul>
@@ -44,8 +44,7 @@ Hyperspectral Image toolbox
     </li>
 </ul>
 
-   
-![Alt text](/Users/Usuario/pipeline_apresentacao/HyperSI/images/camera hsi.png?raw=true "HSI")
+![alt text](https://github.com/artsousa/HyperSI/blob/documentacao_pipeline/images/camera%20hsi.PNG?raw=true)
    
    
 <ul>
