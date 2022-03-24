@@ -16,7 +16,6 @@ Hyperspectral Image toolbox
         Que pode ser representada por I(x, y, λ). denominada como cubo hiperspectral. Cada pixel vai conter um espectro 
         contendo uma informação espectral da amostra analisada.
     </li>
-    
     <li>       
         Para um determinado comprimento de onda λ, uma imagem pode ser vista utilizando uma escala de cinza ou uma outra 
         escala de cor para representar sua intensidade.
