@@ -119,16 +119,16 @@ class Utils:
     @staticmethod
     def load_bacteria(path: str, name: str, folder='capture'):
         
-         """
-            Função "load_bacteria" com objetivo de obter o caminho das amostras e retornar o carregamento do arquivo.
-            
-            Parâmetros: 
-                - path: Diretório 
-                - name: Nome da amostra (conforme o nome que consta no diretório)
-                - folder: Todos arquivos encontram-se dentro do diretório capture 
-                (Ex. Plastico B\Klebsielapneumonial_700603_Plastico_B_180926-105913\capture)
-            Retorno: 
-                - Saída do diretório
+        """
+        Função "load_bacteria" com objetivo de obter o caminho das amostras e retornar o carregamento do arquivo.
+
+        Parâmetros: 
+            - path: Diretório 
+            - name: Nome da amostra (conforme o nome que consta no diretório)
+            - folder: Todos arquivos encontram-se dentro do diretório capture 
+            (Ex. Plastico B\Klebsielapneumonial_700603_Plastico_B_180926-105913\capture)
+        Retorno: 
+            - Saída do diretório
         """
         sample_path = os.path.join(path, name)
         with open(os.path.join(sample_path, folder, name + '.pkl'), 'rb') as file:

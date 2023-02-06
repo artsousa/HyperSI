@@ -85,16 +85,16 @@ class HsiPipeline:
                              mean=False,
                              process=True):
         
-         """
+        """
             A função "__concatenate_groups" tem como objetivo concatenar as matrizes relacionadas 
             a cada grupo de bactérias entre espécies e colorações
-            
+
             Parâmetros:
                 - spectral_range: Faixa espectral na qual as amostras são selecionadas
                 - case: caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
                 - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
                 - mean: quando True significa que será concatenada a média de cada amostra no grupo, quando False a 
-                  o buraco da matriz será concatenada
+                    o buraco da matriz será concatenada
             Retorno:
                 - A matriz concatenada
                 - Targets dos samples
@@ -145,17 +145,17 @@ class HsiPipeline:
         return concatenated, (targets, targets_0)
 
     def get_group_mean_matrix(self, spectral_range=(1, 241), case=0, true_labels=None, process=True):
-         """
+        """
             A função "get_group_mean_matrix" objetiva obter a média da matriz para os seus respectivos grupos.
-         
+
             Parâmetros:
-                - spectral_range: Faixa espectral na qual as amostras são selecionadas
-                - case: caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
-                - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
-               
+            - spectral_range: Faixa espectral na qual as amostras são selecionadas
+            - case: caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+            - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
+
             Retorno:
-                - Matriz média dos grupos
-                - Amostras no grupo concatenadas antes da média ser calculada
+            - Matriz média dos grupos
+            - Amostras no grupo concatenadas antes da média ser calculada
         """
 
         concatenated, targets = self.__concatenate_groups(spectral_range=spectral_range,
@@ -166,6 +166,7 @@ class HsiPipeline:
             mean_group[key] = self.routine.mean_from_2d(matrix=concatenated[key], axis=0).reshape(1, -1)
 
         return mean_group, targets
+
 
     def get_pca_matrix(self, spectral_range=(1, 241), case=0, true_labels=None, mean=False, pcs=3):
         """
@@ -289,16 +290,16 @@ class HsiPipeline:
     def plot_pca_samples(self, pca_matrix_groups: dict, exp_var_groups: dict,
                          true_labels: tuple, out_dir: str, pc_plot=None):
         
-         """
+        """
             A função "plot_pca_samples" retorna o plot das PCs.
-            
+
             Parâmetros: 
-                - pca_matrix_groups: Matriz PCA retornada pela função get_pca_matrix
-                - exp_var_groups: Grupo de variância explicada retornado pela função get_pca_matrix
-                - true_labels:Tupla com nome dos rótulos das bácterias
-                - out_dir: Nome diretório de saída da imagem plotada
+            - pca_matrix_groups: Matriz PCA retornada pela função get_pca_matrix
+            - exp_var_groups: Grupo de variância explicada retornado pela função get_pca_matrix
+            - true_labels:Tupla com nome dos rótulos das bácterias
+            - out_dir: Nome diretório de saída da imagem plotada
             Retorno: 
-                - O plot dos gráficos que representam a PCA e suas respectivas variâncias
+            - O plot dos gráficos que representam a PCA e suas respectivas variâncias
         """
 
         plots = []
@@ -386,17 +387,17 @@ class HsiPipeline:
     def plot_spectres(self, mean_group: dict, true_labels: dict,
                       out_dir: str, file_name='mean_spectres.jpeg', spectral_range=(1, 241)):
         
-         """ 
+        """ 
             A função "plot_spectres" retorna a imagem plotada dos espectros das bactérias.
-            
+
             Parâmetros:
-                - mean_group: Matriz retornada na função get_group_mean_matrix
-                - true_labels: Dicionário com os rótulos das bactérias
-                - out_dir: string com nome do diretório onde o plot da imagem será salvo
-                - file_name: Nome ao qual a imagem será salva
-                - spectral_range: Faixa espectral na qual as amostras são selecionadas
-           Retorno: 
-               - A função retorna o plot da imagem representando os espectros médios das bactérias. 
+            - mean_group: Matriz retornada na função get_group_mean_matrix
+            - true_labels: Dicionário com os rótulos das bactérias
+            - out_dir: string com nome do diretório onde o plot da imagem será salvo
+            - file_name: Nome ao qual a imagem será salva
+            - spectral_range: Faixa espectral na qual as amostras são selecionadas
+            Retorno: 
+            - A função retorna o plot da imagem representando os espectros médios das bactérias. 
         """
 
         plots = []
@@ -605,20 +606,21 @@ class HsiPipeline:
 
     def get_Xy(self, case: int, spectral_range=(1, 241), test_size=0.5, true_labels=None):
         
-         """
-            Função "get_Xy" visa preparar os dados entre teste e treino para o treinamento e classificação.
-            
-            Parâmetros:      
-                - case: Caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
-                - spectral_range: Faixa espectral na qual as amostras são selecionadas
-                - test_size:  Separação dos dados entre treino e teste em 50% cada
-                - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
-                
-            Retorno: 
-                - A matriz X_test
-                - A matrix Y_test
-                - Rótulos das bácterias
         """
+            Função "get_Xy" visa preparar os dados entre teste e treino para o treinamento e classificação.
+
+        Parâmetros:      
+            - case: Caso de trabalho, de acordo com o dicionário de amostras (case=0 - espécies /case=1 - coloração)
+            - spectral_range: Faixa espectral na qual as amostras são selecionadas
+            - test_size:  Separação dos dados entre treino e teste em 50% cada
+            - true_labels:  Rótulos de cada grupo (Espécie / Coloração)
+
+        Retorno: 
+            - A matriz X_test
+            - A matrix Y_test
+            - Rótulos das bácterias
+        """
+
         y_test = np.array([])
         y_train = np.array([])
 
