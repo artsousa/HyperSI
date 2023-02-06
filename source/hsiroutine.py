@@ -15,15 +15,15 @@ class HsiRoutine:
 
     def plot_mean_spectre(self, samples: list, **kwargs):
       
-       """
-          Plote o espectro médio, calculado a partir da matriz 2D, o eixo padrão são as linhas
-          amostras: lista de matriz 2D (x*y, z)
-          
-          Parâmetros: 
-              - samples: Lista de amostras a serem plotadas. 
-              - Argumentos para plotagem do grafico (cor, espessura, etc. )
-          Retorno
-              - Imagem com o plot dos espectros médios
+        """
+            Plote o espectro médio, calculado a partir da matriz 2D, o eixo padrão são as linhas
+            amostras: lista de matriz 2D (x*y, z)
+
+            Parâmetros: 
+            - samples: Lista de amostras a serem plotadas. 
+            - Argumentos para plotagem do grafico (cor, espessura, etc. )
+            Retorno
+            - Imagem com o plot dos espectros médios
         """
         plot = []
         for matrix in samples:
@@ -56,28 +56,28 @@ class HsiRoutine:
 
     def raw2mat(self, image: Sample, white: Sample, dark: Sample,
                 inplace=True):
-         """
+        """
             Normaliza a amostra usando o Dark (0% Reflectance) e
             Referências brancas (100% de refletância), usando a equação:
             -log10((S - D)/(W - D))
-            
-            Parâmetros: 
-                - image: A própria amostra sample, arquivo .hdr
-                - white: Referência do branco, arquivo WHITEREF
-                - dark: Referência do preto, arquivo DARKREF
-                - inplace: significa altera o comportamento padrão, de modo que a operação no 
-                dataframe não retorna nada, em vez disso, 'modifica os dados subjacentes'
-                
-            Funções: 
-                extract_lines: Retorna somente as linhas obtidas na matrix
-                    - Parâmetros: A própria matriz e a quantidade de linhas. 
-                    - Retorno: Quantidade de linhas na matriz
-                replace_median: Retorna matriz com a nova média substituída (verificando os locais na matriz em que são 
-                                zero e substituindo pela próxima posição. 
-                    - Parâmetros: A própria matriz
-                    - Retorno: A matriz com valores substituidos da média
+
+        Parâmetros: 
+            - image: A própria amostra sample, arquivo .hdr
+            - white: Referência do branco, arquivo WHITEREF
+            - dark: Referência do preto, arquivo DARKREF
+            - inplace: significa altera o comportamento padrão, de modo que a operação no 
+            dataframe não retorna nada, em vez disso, 'modifica os dados subjacentes'
+
+        Funções: 
+            extract_lines: Retorna somente as linhas obtidas na matrix
+            - Parâmetros: A própria matriz e a quantidade de linhas. 
+            - Retorno: Quantidade de linhas na matriz
+            replace_median: Retorna matriz com a nova média substituída (verificando os locais na matriz em que são 
+            zero e substituindo pela próxima posição. 
+            - Parâmetros: A própria matriz
+            - Retorno: A matriz com valores substituidos da média
             Retorno: 
-                - Matriz normalizada
+            - Matriz normalizada
         """
 
         def extract_lines(matrix, lines):
@@ -177,13 +177,13 @@ class HsiRoutine:
 
     @staticmethod
     def snv(matrix: np.ndarray):
-          """
+        """
             Standard Normal Variate (SNV). 
-            
+
             Parâmetros: 
-                - matrix: Matriz em formato numpy
+            - matrix: Matriz em formato numpy
             Retorno: 
-                - Matriz normalizada conforme SNV
+            - Matriz normalizada conforme SNV
         """
 
 
@@ -195,13 +195,13 @@ class HsiRoutine:
 
     @staticmethod
     def normalize_mean(matrix: np.ndarray):
-         """
+        """
             Centralizar os dados em 0 com a média
-            
+
             Parâmetros: 
-                - matrix: Matriz com formato numpy
+            - matrix: Matriz com formato numpy
             Retorno: 
-                - Matriz normalizada
+            - Matriz normalizada
         """
 
         out = np.zeros_like(matrix)
@@ -317,7 +317,7 @@ class HsiRoutine:
         return out.astype(int)
 
     def getCluster(self, image, idx, c, rgb):
-          """  
+        """  
             Apresentar o idx na imagem
         """
 
