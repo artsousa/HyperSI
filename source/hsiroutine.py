@@ -265,7 +265,7 @@ class HsiRoutine:
     @staticmethod
     def rgbscale(image):
         
-         """
+        """
             Converter imagem para escala em RGB    
             
             Parâmetros: 
