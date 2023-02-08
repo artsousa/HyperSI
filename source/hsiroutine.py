@@ -52,7 +52,8 @@ class HsiRoutine:
                                         sample,
                                         'capture', sample + '.hdr')).metadata['Wavelength']
 
-        return np.array(wv)[spectral_range[0]:spectral_range[1]].reshape(1, -1)
+        return np.array(wv)[spectral_range[0]:spectral_range[1]] \
+                .reshape(1, -1).astype(np.float)
 
     def raw2mat(self, image: Sample, white: Sample, dark: Sample,
                 inplace=True):
@@ -248,9 +249,9 @@ class HsiRoutine:
         """
         return savgol_filter(matrix, window, order, deriv=derivative, mode=mode)
 
-    def removeBg(self, matrix, pcs):
+    def removeBg(self, matrix: np.array, pcs=2, k_clusters=2):
         """
-            Matriz 3d para remover o bg
+            matrix 2d para remover o bg
             pcs: número de pcs para kmeans
             
             Parâmetros: 
@@ -259,8 +260,8 @@ class HsiRoutine:
             Retorno: 
                 - Matriz filtrada com a remoção do background
         """
-        scores = PCA(n_components=pcs).fit_transform(self.hsi2matrix(matrix))
-        return KMeans(n_clusters=2, init='k-means++', n_init=5, max_iter=300).fit(scores).labels_
+        scores = PCA(n_components=pcs).fit_transform(matrix)
+        return KMeans(n_clusters=k_clusters, init='k-means++', n_init=5, max_iter=300).fit(scores).labels_
 
     @staticmethod
     def rgbscale(image):

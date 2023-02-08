@@ -117,10 +117,10 @@ class Utils:
         return ''.join(labels[0].split('_')[:sz])
 
     @staticmethod
-    def load_bacteria(path: str, name: str, folder='capture'):
+    def load_hsisample(path: str, name: str, folder='capture'):
         
         """
-        Função "load_bacteria" com objetivo de obter o caminho das amostras e retornar o carregamento do arquivo.
+        Função "load_hsisample" com objetivo de obter o caminho das amostras e retornar o carregamento do arquivo.
 
         Parâmetros: 
             - path: Diretório 

@@ -38,7 +38,7 @@ class HsiPipeline:
                           white_prefix='WHITEREF_', ):
         pass
 
-    def _signal_filter(self, sample: Sample,
+    def _signal_filter(self, cube: np.array,
                        order=2, window=21, dv=1, mode='constant'):
         
         """ 
@@ -51,7 +51,7 @@ class HsiPipeline:
                 - Matrix filtrada. 
         """
 
-        matrix = self.routine.hsi2matrix(sample.normalized)
+        matrix = self.routine.hsi2matrix(cube)
         matrix = self.routine.normalize_mean(matrix)
         matrix = self.routine.sgolay(matrix=matrix, order=order, window=window, derivative=dv, mode=mode)
 
