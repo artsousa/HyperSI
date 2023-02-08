@@ -282,7 +282,6 @@ class HsiRoutine:
         for idx, (rid, vec) in enumerate(zip(out, idx)):
             if vec != c:
                 out[idx] = -1
-        out[out == -1] = 0
 
         return out
 
