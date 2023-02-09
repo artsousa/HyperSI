@@ -328,9 +328,9 @@ class HsiRoutine:
             image = MinMaxScaler(feature_range=(0, 1)).fit_transform(image)
             image = np.stack((image, image, image), axis=2)
 
-        image[out_i[0] != 0, 0] = rgb[0]
-        image[out_i[1] != 0, 1] = rgb[1]
-        image[out_i[2] != 0, 2] = rgb[2]
+        image[out_i[0] > 0, 0] = rgb[0]
+        image[out_i[1] > 0, 1] = rgb[1]
+        image[out_i[2] > 0, 2] = rgb[2]
 
         return image
 

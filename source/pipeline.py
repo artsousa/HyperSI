@@ -105,15 +105,17 @@ class HsiPipeline:
         concatenated = {}
         for idx, sample in enumerate(list(self.samples)):
 
-            bacteria = Utils.load_bacteria(path=self.folder, name=sample)
+            hsisample = Utils.load_hsisample(
+                path=self.folder, name=sample, folder='capture'
+            )
 
             if process:
-                matrix = self._signal_filter(sample=bacteria)
+                matrix = self._signal_filter(sample=hsisample)
             else:
-                matrix = self.routine.hsi2matrix(bacteria.normalized)
+                matrix = self.routine.hsi2matrix(hsisample.normalized)
                 matrix = self.routine.normalize_mean(matrix)
 
-            ind, _ = self.routine.sum_idx_array(self.routine.realIdx(bacteria.sample_cluster, 1))
+            ind, _ = self.routine.sum_idx_array(self.routine.realIdx(hsisample.sample_cluster, 1))
             matrix = matrix[ind, spectral_range[0]:spectral_range[1]]
 
             targets_0[self.samples[sample][0]] = self.samples[sample][case]
