@@ -9,7 +9,6 @@ from source.sample import Sample
 from joblib import dump, load
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
-from source.hsiroutine import HsiRoutine
 import matplotlib.patches as mpatches
 from sklearn.decomposition import PCA
 from collections import Counter, OrderedDict
@@ -19,13 +18,15 @@ from sklearn.model_selection import train_test_split
 from IPython.display import clear_output
 from sklearn.metrics import confusion_matrix
 
+from source import hsi_functional as F
+
+
 
 class HsiPipeline:
 
     def __init__(self, data_folder: str, samples: dict):
         self.folder = data_folder
         self.samples = samples
-        self.routine = HsiRoutine()
         self.utils = Utils()
 
         self.properties = {'fontproperties': {'family': 'sans-serif',
@@ -51,11 +52,11 @@ class HsiPipeline:
                 - Matrix filtrada. 
         """
 
-        matrix = self.routine.hsi2matrix(cube)
-        matrix = self.routine.normalize_mean(matrix)
-        matrix = self.routine.sgolay(matrix=matrix, order=order, window=window, derivative=dv, mode=mode)
+        matrix = F.hsi2matrix(cube)
+        matrix = F.normalize_mean(matrix)
+        matrix = F.sgolay(matrix=matrix, order=order, window=window, derivative=dv, mode=mode)
 
-        return self.routine.snv(matrix=matrix)
+        return F.snv(matrix=matrix)
 
     def visualize_images(self):
         
@@ -76,8 +77,8 @@ class HsiPipeline:
 
             clear_output()
             image = bacteria.normalized[50, :, :]
-            out_i = self.routine.getCluster(image, bacteria.sample_cluster, 0, (1, 1, 1))
-            plt.imshow(self.routine.rgbscale(out_i))
+            out_i = F.getCluster(image, bacteria.sample_cluster, 0, (1, 1, 1))
+            plt.imshow(F.rgbscale(out_i))
             plt.show()
 
     def __concatenate_groups(self, spectral_range=(1, 241), case=0,
@@ -112,10 +113,10 @@ class HsiPipeline:
             if process:
                 matrix = self._signal_filter(sample=hsisample)
             else:
-                matrix = self.routine.hsi2matrix(hsisample.normalized)
-                matrix = self.routine.normalize_mean(matrix)
+                matrix = F.hsi2matrix(hsisample.normalized)
+                matrix = F.normalize_mean(matrix)
 
-            ind, _ = self.routine.sum_idx_array(self.routine.realIdx(hsisample.sample_cluster, 1))
+            ind, _ = F.sum_idx_array(F.realIdx(hsisample.sample_cluster, 1))
             matrix = matrix[ind, spectral_range[0]:spectral_range[1]]
 
             targets_0[self.samples[sample][0]] = self.samples[sample][case]
@@ -142,7 +143,7 @@ class HsiPipeline:
             else:
                 concatenated[self.samples[sample][case]] = \
                     np.concatenate((concatenated[self.samples[sample][case]],
-                                    self.routine.mean_from_2d(matrix, axis=0).reshape(1, -1)))
+                                    F.mean_from_2d(matrix, axis=0).reshape(1, -1)))
 
         return concatenated, (targets, targets_0)
 
@@ -165,7 +166,7 @@ class HsiPipeline:
 
         mean_group = {}
         for key in list(concatenated.keys()):
-            mean_group[key] = self.routine.mean_from_2d(matrix=concatenated[key], axis=0).reshape(1, -1)
+            mean_group[key] = F.mean_from_2d(matrix=concatenated[key], axis=0).reshape(1, -1)
 
         return mean_group, targets
 
@@ -236,7 +237,7 @@ class HsiPipeline:
             bacteria = Utils.load_bacteria(path=self.folder, name=sample)
             matrix = self._signal_filter(sample=bacteria)
 
-            ind, _ = self.routine.sum_idx_array(self.routine.realIdx(bacteria.sample_cluster, 1))
+            ind, _ = F.sum_idx_array(F.realIdx(bacteria.sample_cluster, 1))
 
             idx_train, idx_test = train_test_split(ind, test_size=0.5, shuffle=False)
             x[sample] = matrix[idx_train if train else idx_test, spectral_range[0]:spectral_range[1]]
@@ -406,7 +407,7 @@ class HsiPipeline:
         fig, axes = plt.subplots(figsize=(12, 6), dpi=1000)
         plt.rcParams.update({'font.size': 10})
 
-        wavelengths = self.routine.get_wavelength(folder=self.folder,
+        wavelengths = F.get_wavelength(folder=self.folder,
                                                   sample=list(self.samples.keys())[0],
                                                   spectral_range=spectral_range)
 
@@ -491,36 +492,36 @@ class HsiPipeline:
             darkref = Sample(self.folder, sample, sample_prefix='DARKREF_')
             whiteref = Sample(self.folder, sample, sample_prefix='WHITEREF_')
 
-            bacteria.normalized = self.routine.raw2mat(image=bacteria, dark=darkref, white=whiteref, inplace=False)
+            bacteria.normalized = F.raw2mat(image=bacteria, dark=darkref, white=whiteref, inplace=False)
 
             # Pre process block
             matrix = self._signal_filter(sample=bacteria)
 
             # Plot mean spectre
-            # plot = self.routine.plot_mean_spectre(samples=[matrix])
+            # plot = F.plot_mean_spectre(samples=[matrix])
 
             rows, cols = bacteria.normalized.shape[1:]
-            cube = self.routine.matrix2hsi(matrix, rows, cols)
+            cube = F.matrix2hsi(matrix, rows, cols)
 
-            idx = self.routine.removeBg(cube, 2) + 1
+            idx = F.removeBg(cube, 2) + 1
 
             image = cube[50, :, :]
-            out_i = self.routine.getCluster(image, idx, 1, (1, 0, 0))
-            out_i2 = self.routine.getCluster(image, idx, 2, (0, 1, 0))
+            out_i = F.getCluster(image, idx, 1, (1, 0, 0))
+            out_i2 = F.getCluster(image, idx, 2, (0, 1, 0))
 
-            plt.imshow(self.routine.rgbscale(out_i))
+            plt.imshow(F.rgbscale(out_i))
             plt.show()
-            plt.imshow(self.routine.rgbscale(out_i2))
+            plt.imshow(F.rgbscale(out_i2))
             plt.show()
 
             cluster = input('red or green?')
 
             clear_output()
-            ind, rm = self.routine.sum_idx_array(self.routine.realIdx(idx, int(cluster)))
-            bacteria.sample_cluster = self.routine.rev_idx_array(ind, rm)
+            ind, rm = F.sum_idx_array(F.realIdx(idx, int(cluster)))
+            bacteria.sample_cluster = F.rev_idx_array(ind, rm)
 
-            out_i = self.routine.getCluster(image, bacteria.sample_cluster, 1, (1, 0, 0))
-            plt.imshow(self.routine.rgbscale(out_i))
+            out_i = F.getCluster(image, bacteria.sample_cluster, 1, (1, 0, 0))
+            plt.imshow(F.rgbscale(out_i))
             plt.show()
 
             bacteria.image = None
@@ -563,19 +564,19 @@ class HsiPipeline:
                 matrix = self._signal_filter(sample=bacteria)
                 matrix = matrix[:, spectral_range[0]:spectral_range[1]]
 
-                ind, rem = self.routine.sum_idx_array(self.routine.realIdx(bacteria.sample_cluster, 1))
+                ind, rem = F.sum_idx_array(F.realIdx(bacteria.sample_cluster, 1))
 
                 result = model.predict(matrix[ind])
-                full_array = self.routine.rev_idx_array(ind, rem, tfill=result)
+                full_array = F.rev_idx_array(ind, rem, tfill=result)
 
                 targets = []
                 cl_legends = []
-                image = self.routine.matrix2hsi(matrix, *bacteria.normalized.shape[1:])[50, :, :]
-                image = self.routine.getCluster(image, bacteria.sample_cluster, 0, (255, 255, 255))
+                image = F.matrix2hsi(matrix, *bacteria.normalized.shape[1:])[50, :, :]
+                image = F.getCluster(image, bacteria.sample_cluster, 0, (255, 255, 255))
 
                 for classe in model.classes_:
                     #             print(hex2rgb(colors[str(int(classe))]), colors[str(int(classe))])
-                    image = self.routine.getCluster(image,
+                    image = F.getCluster(image,
                                                     full_array,
                                                     classe,
                                                     Utils.hex2rgb(self.utils.colors[str(int(classe))]))
@@ -650,7 +651,7 @@ class HsiPipeline:
             else:
                 target_names.append(sample)
 
-            ind, _ = self.routine.sum_idx_array(self.routine.realIdx(bacteria.sample_cluster, 1))
+            ind, _ = F.sum_idx_array(F.realIdx(bacteria.sample_cluster, 1))
 
             if test_size < 1.0:
                 idx_train, idx_test = train_test_split(ind, test_size=test_size, shuffle=False)

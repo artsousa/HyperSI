@@ -13,13 +13,27 @@ sp.settings.envi_support_nonlowercase_params = True
  """
 
 
-class Sample:
-    def __init__(self, path, sample_name, inter='capture',
-                 sample_prefix=None,
-                 to_numpy_format=True):
+import os
+import pickle
+import spectral as sp
 
-        self.path = os.path.join(path, sample_name, (inter if inter else ''))
-        self.sample_name = (sample_prefix if sample_prefix else '') + sample_name
+sp.settings.envi_support_nonlowercase_params = True
+
+
+class Sample:
+    def __init__(self, sample_name, folder: str = "capture", sample_prefix: str = None):
+        """
+        Args:
+            sample_name: The path to the sample.
+            inter: The interface used to capture the sample.
+            sample_prefix: The prefix of the sample.
+            to_numpy_format: Whether to convert the sample to NumPy format.
+        """
+
+        self.path = os.path.join(sample_name, (folder if folder else ""))
+        self.sample_name = (sample_prefix if sample_prefix else "") + sample_name.split(
+            os.sep
+        )[-1]
 
         self.image = None
         self.sample = None
@@ -27,71 +41,102 @@ class Sample:
         self.normalized = None
         self.sample_cluster = None
 
-        self._read_image(to_numpy_format)
+        self._read_image()
 
-    def _read_image(self, to_numpy_format):
+    def _read_image(
+        self,
+    ):
         """
-            imagem armazena uma classe do pacote Spectral
-            sample armazena um array numpy com 3 dimensões (comprimento de onda x linhas x colunas)
+            Reads the image and stores it in the `sample` attribute.
         """
         try:
-            self.image = sp.open_image(os.path.join(self.path, self.sample_name + '.hdr'))
-            self.sample = self.image.load()
+            self.image = sp.open_image(
+                os.path.join(self.path, self.sample_name + ".hdr")
+            )
 
-            if to_numpy_format:
-                self.sample = self.sample.transpose(2, 0, 1)
+            self.sample = self.image.load().transpose(2, 0, 1)
 
         except Exception as e:
             print(e)
 
     def save(self):
         """
-            salvar a imagem normalizada
+            Saves the sample to a pickle file.
         """
         sample_path = os.path.join(self.path, self.sample_name)
-        sample_file = sample_path + '.pkl'
+        sample_file = sample_path + ".pkl"
 
-        with open(sample_file, 'wb') as destination_dir:
+        with open(sample_file, "wb") as destination_dir:
             pickle.dump(self, destination_dir, -1)
 
     @property
     def image(self):
+        """
+            Returns the image.
+        """
         return self.__image
 
     @image.setter
     def image(self, var):
+        """
+            Sets the image.
+        """
         self.__image = var
 
     @property
     def sample(self):
+        """
+            Returns the sample.
+        """
         return self.__sample
 
     @sample.setter
     def sample(self, var):
+        """
+            Sets the sample.
+        """
         self.__sample = var
 
     @property
     def normalized(self):
+        """
+            Returns the normalized sample.
+        """
         return self.__normalized
 
     @normalized.setter
     def normalized(self, var):
+        """
+            Sets the normalized sample.
+        """
         self.__normalized = var
 
     @property
     def processed(self):
+        """
+            Returns the processed sample.
+        """
         return self.__processed
 
     @processed.setter
     def processed(self, var):
+        """
+            Sets the processed sample.
+        """
         self.__processed = var
 
     @property
     def sample_cluster(self):
+        """
+            Returns the sample cluster.
+        """
         return self.__sample_cluster
 
     @sample_cluster.setter
     def sample_cluster(self, var):
+        """
+            Sets the sample cluster.
+        """
         self.__sample_cluster = var
 
 
